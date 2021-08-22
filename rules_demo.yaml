@@ -1,6 +1,28 @@
-conditions:
-  # evaluate (x op y)
+parsers:
+  # Few examples for custom made parsers:
+  MeminfoSystem:  # A Regex based parser that parses /proc/meminfo
+    class: Regex
+    path: /proc/meminfo
+    regex_string: (.+):\s*(\d+)\s([A-Za-z]+)\n
 
+  Mounts_process:  # A Regex based parser that parses /proc/pid/mounts
+    class: Regex
+    path: /proc/{pid}/mounts/
+    regex_string: (.+) (.+) (.+) (.+) (.+) (.+)\n
+
+  Mounts_system:  # A Regex based parser that parses /proc/pid/mounts
+    class: Regex
+    path: /proc/mounts
+    regex_string: (.+) (.+) (.+) (.+) (.+) (.+)\n
+
+conditions:
+  # Declarations of conditions.
+  # Note: the x param structure - "func(ParserClass.Field...Field)"
+  # Available functions - Count
+  # Available Parsers Classes - Meminfo, Mounts, TotalProcessesInfo, Vmstat, Status, MountsPID, Mountsinfo, Maps, FD,
+  # FDinfo
+  # Available Fields - depends on the parser class.
+  # Available operator - Equals, NotEquals, Less, Greater, LessEq, Contains, Diff
   free_memory_changes: &free_memory_changes
     x:              Meminfo.MemFree
     op:             Diff
@@ -37,7 +59,10 @@ conditions:
 
 
 rules_catalogue:
-  # if (condition) then (action)
+  # The user-defined rules available to use to control the /proc flow.
+  # Each rule has a name, a condition and an action that invoked if the condition is satisfied.
+  # The current action_prm are designed for the project's dashboard.
+
   log_total_memory: &log_total_memory
     condition:      *free_memory_changes
     action:         LogCurrent
@@ -82,7 +107,7 @@ rules_catalogue:
   cpus_allowed_changed: &cpus_allowed_changed
     condition:
       or:
-        cond1: *num_of_cpu_allowed_changed
+        cond1: *num_of_cpu_allowed_changed  # An example of Boolean operator (Available bool op's - or, and, not)
         cond2: *num_of_cpu_allowed_changed
 
     action: LogToDashboard
@@ -99,6 +124,30 @@ rules_catalogue:
       title: Many open files
       message: More than 100 files open
 
+
+# A tree of rules -
+# The below structure defines which rules belongs to which processes.
+# Under /proc, each pid has a unique 'exe' value and unique 'cmdline' value.
+# The tree rules structure:
+#exe1:
+# rules:
+#   -rule1
+#   -rule2
+#   ...
+# cmdline1:
+#   rules:
+#     -rule1
+#     -rule2
+#     ...
+# cmdline2:
+#     -rule1
+#     -rule2
+#     ...
+#exe2:...
+# ...
+#system_rules:
+# -system_rule1
+# -system_rule2
 
 
 /home/silver/Desktop/demo_victim:
