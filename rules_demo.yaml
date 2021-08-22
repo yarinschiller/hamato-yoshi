@@ -1,0 +1,115 @@
+conditions:
+  # evaluate (x op y)
+
+  free_memory_changes: &free_memory_changes
+    x:              Meminfo.MemFree
+    op:             Diff
+
+  free_memory_less: &free_memory_less
+    x:              Meminfo.MemFree
+    op:             Less
+    y:              4000000
+
+  num_of_sons_of_pid_1464_changed: &num_of_sons_of_pid_1464_changed
+    x: Count(TotalProcessesInfo.PPID.1464)
+    op: Diff
+
+  map_addresses_changed: &map_addresses_changed
+    x: Maps.addresses
+    op: Diff
+
+  num_of_open_files_changed: &num_of_open_files_changed
+    x: FD
+    op: Diff
+
+  cond_uid_changes: &cond_uid_changed
+    x: Status.Uid
+    op: Diff
+
+  num_of_cpu_allowed_changed: &num_of_cpu_allowed_changed
+    x: Status.Cpus_allowed
+    op: Diff
+
+  cond_more_then_100_files: &cond_more_then_100_open_files
+    x: Count(FD)
+    op: Greater
+    y: 100
+
+
+rules_catalogue:
+  # if (condition) then (action)
+  log_total_memory: &log_total_memory
+    condition:      *free_memory_changes
+    action:         LogCurrent
+
+  log_free_memory_less: &log_free_memory_less
+    condition:      *free_memory_less
+    action:         LogCurrent
+
+  orphan_processes: &orphan_processes
+    condition: *num_of_sons_of_pid_1464_changed
+    action:         LogToDashboard
+    action_prm:
+      subject_name: Processes / Threads
+      title: Init children
+      message: The number of init children changed
+
+  mem_get_execute_perms: &mem_get_execute_perms
+    condition: *map_addresses_changed
+    action: LogToDashboard
+    action_prm:
+      subject_name: Memory
+      title: Execute permission changed
+      message: Execute permission changed
+
+  open_files_changed: &open_files_changed
+    condition: *num_of_open_files_changed
+    action:         LogToDashboard
+    action_prm:
+      subject_name: Files / Sockets / Pipes
+      title: Open Files
+      message: The number of open files has changed
+
+
+  uid_changed: &uid_changed
+    condition: *cond_uid_changed
+    action: LogToDashboard
+    action_prm:
+      subject_name: Permissions
+      title: UID changed
+      message: UID changed
+
+  cpus_allowed_changed: &cpus_allowed_changed
+    condition:
+      or:
+        cond1: *num_of_cpu_allowed_changed
+        cond2: *num_of_cpu_allowed_changed
+
+    action: LogToDashboard
+    action_prm:
+      subject_name: Global Changes
+      title: Set affinity suspect
+      message: Cpu allowed changed
+
+  more_then_100_files_open: &more_then_100_files_open
+    condition: *cond_more_then_100_open_files
+    action:         LogToDashboard
+    action_prm:
+      subject_name: Files / Sockets / Pipes
+      title: Many open files
+      message: More than 100 files open
+
+
+
+/home/silver/Desktop/demo_victim:
+  rules:
+    - *mem_get_execute_perms
+    - *uid_changed
+    - *cpus_allowed_changed
+    - *open_files_changed
+    - *more_then_100_files_open
+
+system_rules:
+  - *orphan_processes
+#  - *log_total_memory
+#  - *log_free_memory_less

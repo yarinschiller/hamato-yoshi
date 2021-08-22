@@ -1,0 +1,4 @@
+path,parser,rule,rule_prm,condition,condition_prm,action,action_prm
+/proc/meminfo,Meminfo,Field,MemTotal,Diff,,LogCurrent,MemTotal = %d
+,,Field,MemFree,Less,12545000,LogCurrent,MemFree = %d
+/proc/vmstat,Vmstat,Field,pgfree,Diff,,LogCurrent,pgfree = %d

@@ -1,0 +1,7 @@
+exe,cmdline,path,parser,rule,rule_prm,condition,condition_prm,action,action_prm
+/usr/bin/python3.8,python3,/stat,Default,Default,,Diff,,LogCurrent,stat = %s
+/usr/bin/python3.8,python3,/task,,Default,,Diff,,LogCurrent,task = %s
+/usr/bin/python3.8,python3,/maps,Default,Default,,Diff,,LogCurrent,maps = %s
+/usr/bin/python3.8,python3,fd,,Default,,Diff,,LogCurrent,fd = %s
+/usr/bin/python3.8,python3,fdinfo,,Default,,Diff,,LogCurrent,fdinfo = %s
+/usr/bin/python3.8,python3 main.py,fd,Default,Default,,Diff,,LogCurrent,main.py fd = %s

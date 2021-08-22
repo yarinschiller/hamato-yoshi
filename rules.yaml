@@ -1,0 +1,230 @@
+######################### YAML STRUCTURE #########################
+# system_rules:
+#   path:
+#     parser: parser_class
+#     rules:
+#       - rule_class: value      \
+#         rule_prm: value         \
+#         condition_class: value   \ Note: These fields together represents
+#         condition_prm: value     / a rule under a path & parser.
+#         action_class: value     /
+#         action_prm: value     /
+#
+#       - another rule (set of key and values)...
+#         ...
+#
+# proc_rules:
+#   exe:
+#     universal_rules:  (NOTE: this key is directly under exe, which means that the rules under the "path" keys will
+#                         invoke on all the processes that matches one of the keys in the "cmdlines" list below)
+#       - path:
+#           parser: parser_class
+#           rules:
+#             - rule_class: value      \
+#               rule_prm: value         \
+#               condition_class: value   \ Note: These fields together represents
+#               condition_prm: value     / a rule under a path & parser.
+#               action_class: value    /
+#               action_prm: value    /
+#
+#             - another rule (set of key and values)...
+#               ...
+#       - path:
+#           parser: parser_class
+#           rules:
+#             - rule_class: value      \
+#               rule_prm: value         \
+#               condition_class: value   \ Note: These fields together represents
+#               condition_prm: value     / a rule under a path & parser.
+#               action_class: value    /
+#               action_prm: value    /
+#
+#             - another rule (set of key and values)...
+#               ...
+#     cmdlines:
+#       cmdline1:
+#         - path:
+#             parser: parser_class
+#             rules:
+#               - rule_class: value      \
+#                 rule_prm: value         \
+#                 condition_class: value   \ Note: These fields together represents
+#                 condition_prm: value     / a rule under a path & parser.
+#                 action_class: value    /
+#                 action_prm: value    /
+#
+#               - another rule (set of key and values)...
+#                 ...
+#       cmdline2:
+#         - path:
+#             parser: parser_class
+#             rules:
+#               - rule_class: value      \
+#                 rule_prm: value         \
+#                 condition_class: value   \ Note: These fields together represents
+#                 condition_prm: value     / a rule under a path & parser.
+#                 action_class: value    /
+#                 action_prm: value    /
+#
+#               - another rule (set of key and values)...
+#                 ...
+
+#
+#  NOTE: The '-' at the beginning of the rule first key represents a start of a list.
+#
+######################### EXAMPLE ################################
+#
+# system_rules:
+#   /proc/meminfo:
+#    parser: Meminfo
+#    rules:
+#      - rule_class: Field
+#        rule_prm: MemTotal
+#        condition_class: Diff
+#        condition_prm: ~  # (Note: indicates "NONE", in future fields like this will be optional)
+#        action_class: LogCurrent
+#        action_prm: Memtotal = %d
+#
+#      - rule_class: Field
+#        rule_prm: MemFree
+#        condition_class: Less
+#        condition_prm: 12545000
+#        action_class: LogCurrent
+#        action_prm: MemFree = %d
+#
+#   /proc/vmstat:
+#    parser: Vmstat
+#    rules:
+#      - rule_class: Field
+#        rule_prm: pgfree
+#        condition_class: Diff
+#        condition_prm: ~
+#        action_class: LogCurrent
+#        action_prm: pgfree = %d
+#
+# proc_rules:
+#   /usr/bin/python3.8:
+#     universal_rules: ~
+#     cmdlines:
+#       python3:
+#         - fd:
+#             parser: FD
+#             rules:
+#               - rule_class: Default
+#                 rule_prm: ~
+#                 condition_class: Diff
+#                 condition_prm: ~
+#                 action_class: LogCurrent
+#                 action_prm: fd = %s
+#         - fdinfo:
+#             parser: Fdinfo
+#             rules:
+#               - rule_class: Default
+#                 rule_prm: ~
+#                 condition_class: Diff
+#                 condition_prm: ~
+#                 action_class: LogCurrent
+#                 action_prm: fdinfo = %s
+#       python3 main.py:
+#         - fd:
+#             parser: FD
+#             rules:
+#               - rule_class: Default
+#                 rule_prm: ~
+#                 condition_class: Diff
+#                 condition_prm: ~
+#                 action_class: LogCurrent
+#                 action_prm: main.py fd = %s
+#
+###################### EXAMPLE DETAILS ###########################
+#
+# The above example contains 2 keys, one for system rule and one for processes rules.
+# under system rules:
+# - The first parser of path "/procs/meminfo" contains 2 rules.
+# - The first parser of path "/proc/vmstat" contains 1 rule.
+# under proc rules:
+# - The first key (exe )indicates rules for pid with this exe_pid
+# - The second key (universal rules) are the actual rules for the pid's with exe_pid
+# - The Third key (cmdlines) are the rules for pid's with exe_pid AND cmdline pid's
+##################################################################
+
+---
+ system_rules:
+   /proc/meminfo:
+    parser: Meminfo
+    rules:
+      - rule_class: Field
+        rule_prm: MemTotal
+        condition_class: Diff
+        condition_prm: ~
+        action_class: LogCurrent
+        action_prm: Memtotal = %d
+
+      - rule_class: Field
+        rule_prm: MemFree
+        condition_class: Less
+        condition_prm: 12545000
+        action_class: LogCurrent
+        action_prm: MemFree = %d
+
+   /proc/vmstat:
+    parser: Vmstat
+    rules:
+      - rule_class: Field
+        rule_prm: pgfree
+        condition_class: Diff
+        condition_prm: ~
+        action_class: LogCurrent
+        action_prm: pgfree = %d
+
+ proc_rules:
+   /usr/bin/python3.7:
+     universal_rules: ~
+     cmdlines:
+       python3:
+         fd:
+           parser: FD
+           rules:
+             - rule_class: Default
+               rule_prm: ~
+               condition_class: Diff
+               condition_prm: ~
+               action_class: LogCurrent
+               action_prm: fd = %s
+         fdinfo:
+           parser: FDinfo
+           rules:
+             - rule_class: Default
+               rule_prm: ~
+               condition_class: Diff
+               condition_prm: ~
+               action_class: LogCurrent
+               action_prm: fdinfo = %s
+         tasks:
+           parser: Dir
+           rules:
+             - rule_class: Count
+               rule_prm: ~
+               condition_class: Diff
+               condition_prm: ~
+               action_class: LogCurrent
+               action_prm: fdinfo = %s       python3 main.py:
+         stat:
+           parser: Regex
+           prs_prm: "\d (\d) *."
+           rules:
+             - rule_class: Count
+               rule_prm: ~
+               condition_class: Diff
+               condition_prm: ~
+               action_class: LogCurrent
+               action_prm: fdinfo = %s       python3 main.py:
+         fd:
+           parser: FD
+           rules:
+             - rule_class: Default
+               rule_prm: ~
+               condition_class: Diff
+               condition_prm: ~
+               action_class: LogCurrent
+               action_prm: main.py fd = %s

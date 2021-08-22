@@ -1,0 +1,134 @@
+# When adding a parser, you have two options:
+# 1. Parser for system rules (path == '/proc/...')
+# 2. Parser for processes rules (path ==/proc/pid/...)
+#
+# Examples:
+# Parser for system rules:
+# parsers:
+#   Meminfo_system:        <-- this (key) is the actual parser name
+#     class: Regex         <-- this is the class of the parser (the type), the current classes are: Default, Regex, Dir
+#     path: /proc/meminfo  <-- the path the parser is going to parse
+#     regex_string: (.+):\s*(\d+)\s([A-Za-z]+)\n
+#
+# Parser for processes rules:
+#  Mounts_process:
+#    class: Regex
+#    path: /proc/pid/mounts
+#    regex_string: (.+) (.+) (.+) (.+) (.+) (.+)\n
+
+parsers:
+  MeminfoSystem:
+    class: Regex
+    path: /proc/meminfo
+    regex_string: (.+):\s*(\d+)\s([A-Za-z]+)\n
+
+  Mounts_process:
+    class: Regex
+    path: /proc/{pid}/mounts/{tid}
+    regex_string: (.+) (.+) (.+) (.+) (.+) (.+)\n
+
+  Mounts_system:
+    class: Regex
+    path: /proc/mounts
+    regex_string: (.+) (.+) (.+) (.+) (.+) (.+)\n
+
+conditions:
+  # evaluate (x op y)
+
+  total_memory_less_1000Mb: &total_memory_less_1000Mb
+    x:              Meminfo.MemTotal
+    op:             Less
+    y:              10000000000000
+
+  total_memory_greater_10Mb: &total_memory_greater_10Mb
+    x:              Meminfo.Meminfo
+    op:             Greater
+    y:              10000
+
+  total_open_files_less_10: &total_open_files_less_10
+    x:              CountFD
+    op:             Less
+    y:              10
+
+  total_chrome_instances_leq_4: &total_chrome_instances_leq_4
+    x:              Maps.files
+    op:             Equals
+    y:              []
+
+  one_exe_instance_with_cmdline: &one_exe_instance_with_cmdline
+    x:              Count
+    op:             Equals
+    y:              1
+
+  number_of_init_openfd_unchanged: &number_of_init_openfd_unchanged
+    x:              FD
+    op:             Unchanged
+    
+  init_process_always_opens_temp_file_read: &init_process_always_opens_temp_file_read
+    x:              Count(FD.temp.read)
+    op:             Equals
+    y:  1
+
+  number_of_openfd_unchanged: &number_of_openfd_unchanged
+    x:              FD
+    op:             Unchanged
+    
+  process_always_opens_temp_file_read: &process_always_opens_temp_file_read
+    x:              Count(FD.temp.read)
+    op:             Equals
+    y:  1
+
+
+rules:
+  # if NOT (condition) then (action)
+
+  log_total_memory_limit_exceeded: &log_total_memory_limit_exceeded
+    condition:      *total_memory_less_1000Mb
+    action:         LogCurrent
+    action_param:        total memory %dMb exceeds limit of 1000Mb
+
+  log_total_memory_within_bounds: &log_total_memory_within_bounds
+    condition:
+      or:
+        cond1: *one_exe_instance_with_cmdline
+        cond2:
+          and:
+            cond1: *total_memory_less_1000Mb
+            cond2: *total_memory_greater_10Mb
+    action:         LogCurrent
+    action_param:        total memory %dMb not between bounds [10Mb, 1000Mb]
+
+  log_more_than_10_open_files: &log_more_than_10_open_files
+    condition:      *total_open_files_less_10
+    action:         LogCurrent
+
+  log_total_chromes_exceed_4: &log_total_chromes_exceed_4
+    condition:      *total_chrome_instances_leq_4
+    action:         LogCurrent
+    param:        chrome instances %d
+
+  log_init_opened_temp_read: &log_init_opened_temp_read
+    condition:      *process_always_opens_temp_file_read
+    action:         LogCurrent
+
+
+init:
+  cmd_line_example:
+    rules:
+      - *log_total_memory_limit_exceeded
+
+  another_cmd_line_example:
+      rules:
+        - *log_total_memory_limit_exceeded
+
+  rules:
+    - *log_total_memory_limit_exceeded
+
+
+chrome:
+  rules:
+    - *log_total_memory_limit_exceeded
+
+system_rules:
+  - *log_total_chromes_exceed_4
+  - *log_more_than_10_open_files

@@ -1,0 +1,76 @@
+# When adding a parser, you have two options:
+# 1. Parser for system rules (path == '/proc/...')
+# 2. Parser for processes rules (path ==/proc/pid/...)
+#
+# Examples:
+# Parser for system rules:
+# parsers:
+#   Meminfo_system:        <-- this (key) is the actual parser name
+#     class: Regex         <-- this is the class of the parser (the type), the current classes are: Default, Regex, Dir
+#     path: /proc/meminfo  <-- the path the parser is going to parse
+#     regex_string: (.+):\s*(\d+)\s([A-Za-z]+)\n
+#
+# Parser for processes rules:
+#  Mounts_process:
+#    class: Regex
+#    path: /proc/pid/mounts
+#    regex_string: (.+) (.+) (.+) (.+) (.+) (.+)\n
+
+
+conditions:
+  # evaluate (x op y)
+
+  total_memory_less_1000Mb: &total_memory_less_1000Mb
+    x:              Meminfo.MemTotal
+    op:             Less
+    y:              1000000000000
+
+  const_execute_permissions: &const_execute_permissions
+    x:              Maps.permissions.x
+    op:             Diff
+
+  const_write_permissions: &const_write_permissions
+    x:              Maps.permissions.w
+    op:             Diff
+
+  maps_files_equals_to: &maps_files_equals_to
+    x: Maps.files
+    op: Equals
+    y:  ['/usr/bin/sleep',
+        '[heap]',
+        '/usr/lib/locale/locale-archive',
+        '/usr/lib/x86_64-linux-gnu/libc-2.31.so',
+        '/usr/lib/x86_64-linux-gnu/ld-2.31.so',
+        '[stack]',
+        '[vvar]',
+        '[vdso]',
+        '[vsyscall]']
+
+
+rules_catalogue:
+  # if NOT (condition) then (action)
+
+  log_total_memory_limit_exceeded: &log_total_memory_limit_exceeded
+    condition:      *total_memory_less_1000Mb
+    action:         LogCurrent
+    action_param:        total memory %dMb exceeds limit of 1000Mb
+#
+  log_specificied_map_files: &log_specified_map_files
+    condition: *maps_files_equals_to
+    action: LogCurrent
+
+  log_const_execute_and_write_permissions: &log_const_execute_and_write_permissions
+    condition:
+      and:
+        cond1: *const_execute_permissions
+        cond2: *const_write_permissions
+    action: LogCurrent
+
+
+/usr/bin/sleep:
+  rules:
+    - *log_specified_map_files
+
+system_rules:
+  - *log_total_memory_limit_exceeded
+  - *log_const_execute_and_write_permissions

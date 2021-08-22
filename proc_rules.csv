@@ -1,0 +1,5 @@
+exe,cmdline,path,parser,rule,rule_prm,condition,condition_prm,action,action_prm
+/usr/bin/python3.8,python3,fd,FD,Default,,Diff,,LogCurrent,fd = %s
+/usr/bin/python3.8,python3,fdinfo,Fdinfo,Default,,Diff,,LogCurrent,fdinfo = %s
+/usr/bin/python3.8,python3 main.py,fd,FD,Default,,Diff,,LogCurrent,main.py fd = %s
+/usr/bin/python3.9,python3 main.py,mounts,Mounts,Default,,Diff,,LogCurrent,mounts = %s
