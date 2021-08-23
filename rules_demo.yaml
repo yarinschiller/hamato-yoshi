@@ -1,4 +1,6 @@
 parsers:
+  # Custom made parsers declarations:
+  # NOTE: the available parsers classes for custom made parsers are: Regex, Dir, Default
   # Few examples for custom made parsers:
   MeminfoSystem:  # A Regex based parser that parses /proc/meminfo
     class: Regex
@@ -149,6 +151,15 @@ rules_catalogue:
 # -system_rule1
 # -system_rule2
 
+# Example for rules that written for chrome:
+/usr/bin/google-chrome:        # the exe
+  rules:                       # rules for the exe
+    - *mem_get_execute_perms   # ...
+    - *open_files_changed      # ...
+  chrome:                      # the cmdline
+    - *uid_changed             # rules for the cmdline
+  chrome-stable:               # another cmdline
+    - *uid_changed             # rules for the cmdline
 
 /home/silver/Desktop/demo_victim:
   rules:
